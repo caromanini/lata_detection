@@ -26,7 +26,7 @@ limitations under the License.
 #include "driver/mcpwm.h"
 #include "soc/mcpwm_periph.h"
 
-#define SERVO_PIN 18
+#define SERVO_PIN 12
 
 
 #include "detection_responder.h"
@@ -39,6 +39,8 @@ limitations under the License.
 #if DISPLAY_SUPPORT
 #include "image_provider.h"
 #include "bsp/esp-bsp.h"
+
+static uint8_t s_led_state = 0;
 
 // Camera definition is always initialized to match the trained detection model: 96x96 pix
 // That is too small for LCD displays, so we extrapolate the image to 192x192 pix
@@ -87,6 +89,7 @@ void servo_control(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, float angle)
 #include <iostream>
 
 std::queue<float> lata_scores_queue;
+int flag = 1;
 
 void RespondToDetection(float lata_score, float no_lata_score) {
   // Initialize MCPWM
@@ -125,18 +128,20 @@ void RespondToDetection(float lata_score, float no_lata_score) {
   MicroPrintf("lata score:%d%%, no lata score %d%%",
               lata_score_int, 100 - lata_score_int);
 
-
   //Probando si funciona la idea del queue
   //Chequear si queue ha alcanzado su capacidad máxima 
-  //Tengo que calcular cuatas inferencias se realizan en 5 segundos
-  if(lata_scores_queue.size() > 5){
+  //Tengo que calcular cuantas inferencias se realizan en 5 segundos
+  //Ahora hay 5 para que sea más rápido probar con static images
+
+  if(lata_scores_queue.size() > 30){
+    printf("flag: %d\n", flag);
     lata_scores_queue.pop();
 
     float sum = 0.0;
     std::queue<float> temp_queue = lata_scores_queue;
 
     while(!temp_queue.empty()){
-      std::cout << temp_queue.front() << " ";
+      // std::cout << temp_queue.front() << " ";
       sum += temp_queue.front();
       temp_queue.pop();
     }
@@ -144,45 +149,28 @@ void RespondToDetection(float lata_score, float no_lata_score) {
 
     float average_lata_score = sum / lata_scores_queue.size();
 
-    if (average_lata_score > 0.8){
-      printf("5 segundos sobre 80%% para lata score\n");
+    // printf("average_lata_score: %f\n", average_lata_score);
+
+    if (average_lata_score >= 0.75 && flag == 1){
+      // printf("5 segundos sobre 85%% para lata score\n");
+      printf("SERVO A LATA\n");
       for(int angle=-90; angle<=270; angle++){
         servo_control(MCPWM_UNIT_0, MCPWM_TIMER_0, angle);
       }
-      vTaskDelay(pdMS_TO_TICKS(10));
-    } else {
-      printf("5 segundos menos de 80%% para lata score\n");
+      vTaskDelay(pdMS_TO_TICKS(5));
+      flag = 0;
+    } else if(average_lata_score < 0.50 && flag == 0){
+      // printf("5 segundos menos de 85%% para lata score\n");
+      printf("SERVO A NOLATA\n");
       for (int angle=270; angle>=-90; angle--){
         servo_control(MCPWM_UNIT_0, MCPWM_TIMER_0, angle);
       }
-      vTaskDelay(pdMS_TO_TICKS(10));
+      vTaskDelay(pdMS_TO_TICKS(5));
+      flag = 1;
     }
 
   }
 
   // servo_control(MCPWM_UNIT_0, MCPWM_TIMER_0, -90);
 
-  if (lata_score_int > 60){
-    // gpio_set_level(BLINK_GPIO, 1);
-    // for(int angle=-90; angle<=270; angle++){
-    //   servo_control(MCPWM_UNIT_0, MCPWM_TIMER_0, angle);
-    //   vTaskDelay(pdMS_TO_TICKS(10));
-    // }
-
-    printf("ES MAS DE 60!!!\n");
-
-    // servo_control(MCPWM_UNIT_0, MCPWM_TIMER_0, 180);
-    // vTaskDelay(pdMS_TO_TICKS(10));
-    }
-   else {
-    // for (int angle=270; angle>=-90; angle--){
-    //   servo_control(MCPWM_UNIT_0, MCPWM_TIMER_0, angle);
-    //   vTaskDelay(pdMS_TO_TICKS(10));
-    // }
-    // gpio_set_level(BLINK_GPIO, 0);
-
-    // servo_control(MCPWM_UNIT_0, MCPWM_TIMER_0, -180);
-    // vTaskDelay(pdMS_TO_TICKS(10));
-    printf("ES MENOS DE 60!!!\n");
-  }
 }

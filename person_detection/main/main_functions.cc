@@ -228,8 +228,8 @@ void run_inference(void *ptr) {
   TfLiteTensor* output = interpreter->output(0);
 
   // Process the inference results.
-  int8_t lata_score = output->data.uint8[kLataIndex];
-  int8_t no_lata_score = output->data.uint8[kNotALataIndex];
+  float lata_score = output->data.uint8[kLataIndex];
+  float no_lata_score = output->data.uint8[kNotALataIndex];
 
   float lata_score_f =
       (lata_score - output->params.zero_point) * output->params.scale;

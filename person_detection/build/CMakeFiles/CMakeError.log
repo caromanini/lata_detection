@@ -1,0 +1,20 @@
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+Compiler: C:/Users/chiar/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin/xtensa-esp32-elf-g++.exe 
+Build flags: -mlongcalls;-Wno-frame-address;
+Id flags:  
+
+The output was:
+1
+cc1plus.exe: fatal error: CMakeCXXCompilerId.cpp: No such file or directory
+compilation terminated.
+
+
+Detecting CXX compiler ABI info failed to compile with the following output:
+Change Dir: C:/Users/chiar/Desktop/ESP/person_detection/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Users/chiar/.espressif/tools/ninja/1.11.1/ninja.exe cmTC_dec24 && ninja: error: loading 'build.ninja': El sistema no puede encontrar el archivo especificado.
+
+
+
+
+
